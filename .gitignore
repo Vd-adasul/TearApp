@@ -1,0 +1,10 @@
+node_modules
+dist
+.vscode
+.DS_Store
+*.log
+android/app/build
+android/app/build.gradle
+android/.gradle
+ios/App/App/public
+ios/App/build
