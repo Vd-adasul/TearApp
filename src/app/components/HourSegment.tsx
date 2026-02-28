@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TornEdge } from './TornEdge';
 import { Segment } from '../types';
+import { useSound } from '../hooks/useSound';
 
 interface HourSegmentProps {
   segment: Segment;
@@ -21,6 +22,7 @@ const TASK_SUGGESTIONS = [
 ];
 
 export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: HourSegmentProps) {
+  const { playTear } = useSound();
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
   const [isTearing, setIsTearing] = useState(false);
@@ -38,8 +40,9 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
     setIsTearing(true);
     setIsDragging(false);
     setDragProgress(0);
-    try { navigator.vibrate?.(35); } catch {}
-  }, []);
+    playTear();
+    try { navigator.vibrate?.(35); } catch { }
+  }, [playTear]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (segment.torn || isTearing || isEditing) return;
