@@ -32,7 +32,7 @@ jobs:
       - name: Build Web Assets
         run: npm run build
 
-      - name: Sync Capacitor
+      - name: Initialize & Sync Capacitor
         run: |
           npx cap add android || echo "Android platform already exists"
           npx cap sync
