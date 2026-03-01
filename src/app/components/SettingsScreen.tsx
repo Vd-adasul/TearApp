@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, useOutletContext } from 'react-router';
 
@@ -8,26 +8,13 @@ interface RootContext {
 }
 
 interface SettingsScreenProps {
-  motivationPhoto: string | null;
-  onPhotoChange: (photo: string | null) => void;
   onResetToday: () => void;
 }
 
-export function SettingsScreen({ motivationPhoto, onPhotoChange, onResetToday }: SettingsScreenProps) {
+export function SettingsScreen({ onResetToday }: SettingsScreenProps) {
   const navigate = useNavigate();
   const { isDarkMode, setIsDarkMode } = useOutletContext<RootContext>();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      onPhotoChange(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
 
   return (
     <div
@@ -120,100 +107,6 @@ export function SettingsScreen({ motivationPhoto, onPhotoChange, onResetToday }:
               </div>
             </button>
           </div>
-
-          {/* Memory Photo section */}
-          <SectionLabel label="Memory Anchor" />
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: isDarkMode ? '#2A2623' : '#FDFAF5',
-              boxShadow: '0 2px 12px rgba(0, 0, 0, 0.07)',
-            }}
-          >
-            {motivationPhoto ? (
-              <div>
-                {/* Photo preview */}
-                <div
-                  className="relative h-40 overflow-hidden"
-                  style={{
-                    backgroundImage: `url(${motivationPhoto})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                >
-                  <div
-                    className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, transparent 60%, rgba(28,25,23,0.4))' }}
-                  />
-                  <button
-                    onClick={() => onPhotoChange(null)}
-                    className="absolute top-3 right-3 px-3 py-1 rounded-full"
-                    style={{
-                      background: 'rgba(28, 25, 23, 0.6)',
-                      color: '#F5F0E8',
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '11px',
-                    }}
-                  >
-                    Remove
-                  </button>
-                  <p
-                    className="absolute bottom-3 left-4"
-                    style={{
-                      fontFamily: 'Lora, serif',
-                      fontStyle: 'italic',
-                      fontSize: '13px',
-                      color: 'rgba(245,240,232,0.8)',
-                    }}
-                  >
-                    Your why, faintly in the background.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="w-full p-6 flex flex-col items-center gap-3"
-              >
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: isDarkMode ? 'rgba(175, 135, 90, 0.15)' : 'rgba(139, 115, 85, 0.1)' }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 4V16M4 10H16" stroke={isDarkMode ? "#AF875A" : "#8B7355"} strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <div className="text-center">
-                  <p
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '14px',
-                      color: isDarkMode ? '#F5F0E8' : '#1C1917',
-                    }}
-                  >
-                    Add a memory photo
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '12px',
-                      color: '#A89880',
-                      marginTop: '2px',
-                    }}
-                  >
-                    Appears faintly behind your sheet
-                  </p>
-                </div>
-              </button>
-            )}
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handlePhotoUpload}
-          />
 
           {/* About section */}
           <SectionLabel label="About Tear" />

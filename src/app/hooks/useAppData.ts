@@ -12,7 +12,6 @@ function getDefaultData(): AppData {
     today: null,
     history: [],
     streak: 0,
-    motivationPhoto: null,
     lastQuoteIndex: Math.floor(Math.random() * 50),
   };
 }
@@ -21,7 +20,13 @@ function loadData(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultData();
-    return JSON.parse(raw) as AppData;
+    const parsed = JSON.parse(raw) as Partial<AppData> & { motivationPhoto?: string | null };
+    return {
+      today: parsed.today ?? null,
+      history: parsed.history ?? [],
+      streak: parsed.streak ?? 0,
+      lastQuoteIndex: parsed.lastQuoteIndex ?? Math.floor(Math.random() * 50),
+    };
   } catch {
     return getDefaultData();
   }
@@ -122,8 +127,35 @@ export function useAppData() {
     });
   }, [mutate]);
 
-  const setMotivationPhoto = useCallback((photo: string | null) => {
-    mutate(prev => ({ ...prev, motivationPhoto: photo }));
+  const undoTearSegment = useCallback((segmentId: number) => {
+    mutate(prev => {
+      if (!prev.today) return prev;
+      const updatedSegments = prev.today.segments.map(s =>
+        s.id === segmentId ? { ...s, torn: false, tornAt: null } : s
+      );
+      return { ...prev, today: { ...prev.today, segments: updatedSegments } };
+    });
+  }, [mutate]);
+
+  const addHours = useCallback((hoursToAdd: number) => {
+    mutate(prev => {
+      if (!prev.today || hoursToAdd <= 0) return prev;
+      const nextId = prev.today.segments.length + 1;
+      const newSegments: Segment[] = Array.from({ length: hoursToAdd }, (_, i) => ({
+        id: nextId + i,
+        task: '',
+        torn: false,
+        tornAt: null,
+      }));
+      return {
+        ...prev,
+        today: {
+          ...prev.today,
+          totalHours: prev.today.totalHours + hoursToAdd,
+          segments: [...prev.today.segments, ...newSegments],
+        },
+      };
+    });
   }, [mutate]);
 
   const resetToday = useCallback(() => {
@@ -154,7 +186,8 @@ export function useAppData() {
     setupToday,
     tearSegment,
     updateTask,
-    setMotivationPhoto,
+    undoTearSegment,
+    addHours,
     resetToday,
     getWeeklyTotal,
     isSetupRequired: !data.today,

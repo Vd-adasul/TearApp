@@ -9,6 +9,7 @@ interface HourSegmentProps {
   index: number;
   isLast: boolean;
   onTear: (id: number) => void;
+  onUndoTear: (id: number) => void;
   onTaskChange: (id: number, task: string) => void;
 }
 
@@ -21,7 +22,7 @@ const TASK_SUGGESTIONS = [
   'Code', 'Design', 'Practice', 'Focus', 'Planning',
 ];
 
-export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: HourSegmentProps) {
+export function HourSegment({ segment, index, isLast, onTear, onUndoTear, onTaskChange }: HourSegmentProps) {
   const { playTear } = useSound();
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
@@ -44,8 +45,14 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
     try { navigator.vibrate?.(35); } catch { }
   }, [playTear]);
 
+  const shouldIgnoreGesture = (target: EventTarget | null) => {
+    const el = target as HTMLElement | null;
+    return Boolean(el?.closest('[data-no-swipe="true"]'));
+  };
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (segment.torn || isTearing || isEditing) return;
+    if (shouldIgnoreGesture(e.target)) return;
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -86,6 +93,7 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
     e.stopPropagation();
     setIsEditing(true);
     setShowSuggestions(true);
+    setInputValue(segment.task);
     setTimeout(() => inputRef.current?.focus(), 20);
   };
 
@@ -105,8 +113,6 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
       style={{ touchAction: 'pan-y' }}
     >
       <AnimatePresence mode="sync">
-
-        {/* ── ACTIVE / TEARING ─── */}
         {!segment.torn && (
           <motion.div
             key="paper"
@@ -118,7 +124,11 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
             transition={isTearing
               ? { duration: 0.42, ease: [0.55, 0, 0.9, 0.5] }
               : { duration: 0 }}
-            style={{ transformOrigin: tearDir > 0 ? '5% 50%' : '95% 50%' }}
+            style={{ transformOrigin: tearDir > 0 ? '5% 50%' : '95% 50%', cursor: isEditing ? 'text' : 'grab' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
             onAnimationComplete={() => {
               if (isTearing) {
                 onTear(segment.id);
@@ -127,19 +137,6 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
             }}
             className="relative overflow-hidden"
           >
-            {/* Drag gestures (only when not tearing) */}
-            {!isTearing && (
-              <div
-                className="absolute inset-0 z-10"
-                style={{ cursor: isEditing ? 'default' : 'grab' }}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerCancel}
-              />
-            )}
-
-            {/* Swipe fill */}
             {isDragging && dragProgress > 0 && (
               <div
                 className="absolute inset-0 pointer-events-none z-20"
@@ -151,7 +148,6 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
               />
             )}
 
-            {/* Tear line */}
             {isDragging && dragProgress > 0.08 && (
               <div
                 className="absolute top-0 bottom-0 z-30 pointer-events-none"
@@ -164,7 +160,7 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
             )}
 
             <div
-              className="flex items-center px-5 relative z-0"
+              className="flex items-center px-5 relative z-10"
               style={{
                 minHeight: '72px',
                 borderBottom: isLast ? 'none' : '1px solid rgba(139, 115, 85, 0.1)',
@@ -183,7 +179,7 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
                 {hourLabel}
               </span>
 
-              <div className="flex-1 min-w-0 relative z-20">
+              <div className="flex-1 min-w-0 relative z-20" data-no-swipe="true">
                 {isEditing ? (
                   <>
                     <input
@@ -199,7 +195,7 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
                         }
                       }}
                       maxLength={24}
-                      placeholder="label this hour…"
+                      placeholder="label this hour..."
                       className="w-full bg-transparent outline-none border-none"
                       style={{
                         fontFamily: 'Caveat, cursive',
@@ -251,7 +247,7 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
                       </span>
                     ) : (
                       <span style={{ fontFamily: 'Caveat, cursive', fontSize: '17px', color: 'rgba(139, 115, 85, 0.28)' }}>
-                        tap to label…
+                        tap to label...
                       </span>
                     )}
                   </div>
@@ -273,7 +269,6 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
           </motion.div>
         )}
 
-        {/* ── TORN state ─── */}
         {segment.torn && (
           <motion.div
             key="torn"
@@ -307,16 +302,28 @@ export function HourSegment({ segment, index, isLast, onTear, onTaskChange }: Ho
                   flex: 1,
                 }}
               >
-                {segment.task || '—'}
+                {segment.task || '-'}
               </span>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: 'rgba(107, 94, 79, 0.35)' }}>
-                ✓
-              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUndoTear(segment.id);
+                }}
+                className="ml-3 px-2 py-1 rounded-full"
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '10px',
+                  color: '#6B5E4F',
+                  border: '1px solid rgba(139,115,85,0.25)',
+                  background: '#FDFAF5',
+                }}
+              >
+                undo
+              </button>
             </div>
             <TornEdge height={7} color="#F5F0E8" seed={segment.id * 11 + 2} position="bottom" />
           </motion.div>
         )}
-
       </AnimatePresence>
     </div>
   );

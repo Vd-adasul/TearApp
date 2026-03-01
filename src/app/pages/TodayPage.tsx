@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router';
 import { useAppData } from '../hooks/useAppData';
 import { SetupScreen } from '../components/SetupScreen';
 import { TodayScreen } from '../components/TodayScreen';
@@ -10,6 +9,8 @@ export function TodayPage() {
     isSetupRequired,
     setupToday,
     tearSegment,
+    undoTearSegment,
+    addHours,
     updateTask,
   } = useAppData();
 
@@ -21,9 +22,10 @@ export function TodayPage() {
     <TodayScreen
       today={data.today!}
       quoteIndex={data.lastQuoteIndex}
-      motivationPhoto={data.motivationPhoto}
       streak={data.streak}
       onTear={tearSegment}
+      onUndoTear={undoTearSegment}
+      onAddHours={addHours}
       onTaskChange={updateTask}
     />
   );

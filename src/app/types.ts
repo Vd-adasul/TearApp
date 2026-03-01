@@ -15,6 +15,5 @@ export interface AppData {
   today: DayRecord | null;
   history: DayRecord[];
   streak: number;
-  motivationPhoto: string | null;
   lastQuoteIndex: number;
 }
