@@ -22,13 +22,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-          cache: 'gradle'
-
       - name: Install Dependencies
         run: npm ci
 
@@ -43,6 +36,17 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+          cache-dependency-path: |
+            android/**/*.gradle*
+            android/**/gradle-wrapper.properties
+            android/gradle/libs.versions.toml
 
       - name: Build Android Debug APK
         run: |
